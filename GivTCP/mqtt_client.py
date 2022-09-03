@@ -2,30 +2,32 @@ from logging import Logger
 import paho.mqtt.client as mqtt
 import time
 import sys
-sys.path.append('/app/GivTCP')
 import importlib
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import settings
 from settings import GiV_Settings
 import write as wr
+sys.path.append(GiV_Settings.default_path)
 
 if GiV_Settings.Log_Level.lower()=="debug":
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 elif GiV_Settings.Log_Level.lower()=="info":
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 else:
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.ERROR)
+        logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.ERROR)
+        logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 
-logger = logging.getLogger("GivTCP")
+
+logger = logging.getLogger("GivTCP_MQTT_client_"+str(GiV_Settings.givtcp_instance))
 
 if GiV_Settings.MQTT_Port=='':
     MQTT_Port=1883
@@ -45,13 +47,13 @@ else:
 
 #loop till serial number has been found
 while not hasattr(GiV_Settings,'serial_number'):
-    logger.error("No serial_number available waiting for first read run to occur")
-    time.sleep(2)
+    time.sleep(5)
     #del sys.modules['settings.GiV_Settings']
     importlib.reload(settings)
     from settings import GiV_Settings
     count=+1
     if count==20:
+        logger.error("No serial_number found in MQTT queue. MQTT Control not available.")
         break
     
 logger.info("Serial Number retrieved: "+GiV_Settings.serial_number)
@@ -114,7 +116,7 @@ def on_connect(client, userdata, flags, rc):
         logger.error("Bad connection Returned code= "+str(rc))
 
 
-client=mqtt.Client("GivEnergy_GivTCP_Control")
+client=mqtt.Client("GivEnergy_GivTCP_"+str(GiV_Settings.givtcp_instance)+"_Control")
 mqtt.Client.connected_flag=False        			#create flag in class
 if MQTTCredentials:
     client.username_pw_set(MQTT_Username,MQTT_Password)

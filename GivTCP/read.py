@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# version 2022.01.31
+# version 2022.08.01
 import sys
-sys.path.append('/app/GivTCP')
 from pickletools import read_uint1
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import datetime
 import pickle
 import schedule
@@ -16,9 +16,7 @@ from givenergy_modbus.model.battery import Battery
 from givenergy_modbus.model.plant import Plant
 from os.path import exists
 import os
-
-
-
+sys.path.append(GiV_Settings.default_path)
 
 Print_Raw=False
 if GiV_Settings.Print_Raw_Registers:
@@ -26,24 +24,32 @@ if GiV_Settings.Print_Raw_Registers:
 
 if GiV_Settings.Log_Level.lower()=="debug":
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 elif GiV_Settings.Log_Level.lower()=="info":
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 else:
     if GiV_Settings.Debug_File_Location=="":
-        logging.basicConfig(level=logging.ERROR)
+        logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler()])
     else:
-        logging.basicConfig(filename=GiV_Settings.Debug_File_Location, encoding='utf-8', level=logging.ERROR)
+        logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(name)s [%(levelname)s] %(message)s", handlers=[logging.StreamHandler(),TimedRotatingFileHandler(GiV_Settings.Debug_File_Location, when='D', interval=1, backupCount=7)])
 
-logger = logging.getLogger("GivTCP")
-plant=Plant(number_batteries=GiV_Settings.numBatteries)
+logger = logging.getLogger("GivTCP_Read_"+str(GiV_Settings.givtcp_instance))
+
+#my_logger = logging.getLogger('givenergy_modbus')
+#my_logger.setLevel(logging.CRITICAL)
+lockfile=".lockfile"
+regcache="/config/GivTCP/regCache_"+str(GiV_Settings.givtcp_instance)+".pkl"
+ratedata="/config/GivTCP/rateData_"+str(GiV_Settings.givtcp_instance)+".pkl"
+lastupdate="/config/GivTCP/lastUpdate_"+str(GiV_Settings.givtcp_instance)+".pkl"
+forcefullrefresh="/config/GivTCP/.forceFullRefresh_"+str(GiV_Settings.givtcp_instance)
 
 def getData(fullrefresh):      #Read from Invertor put in cache 
+    plant=Plant(number_batteries=int(GiV_Settings.numBatteries))
     energy_total_output={}
     energy_today_output={}
     power_output={}
@@ -56,9 +62,10 @@ def getData(fullrefresh):      #Read from Invertor put in cache
     temp={}
     logger.info("----------------------------Starting----------------------------")
     logging.info("Getting All Registers")
+
     
     ### Only run if no lockfile present
-    if exists(".lockfile"):
+    if exists(lockfile):
         logger.error("Lockfile set so aborting getData")
         result['result']="Error: Lockfile set so aborting getData"
         return json.dumps(result)
@@ -67,25 +74,28 @@ def getData(fullrefresh):      #Read from Invertor put in cache
     try:
         # SET Lockfile to prevent clashes
         logger.info(" setting lock file")
-        open(".lockfile", 'w').close()
+        logger.info("Connecting to: "+ GiV_Settings.invertorIP)
+        open(lockfile, 'w').close()
+        #client=GivEnergyClient(host=GiV_Settings.invertorIP)
         client=GivEnergyClient(host=GiV_Settings.invertorIP)
         client.refresh_plant(plant,full_refresh=fullrefresh)
         GEInv=plant.inverter
         GEBat=plant.batteries
         #Close Lockfile to allow access
         logger.info("Removing lock file")
-        os.remove(".lockfile")
+        os.remove(lockfile)
   
-        multi_output['Last_Updated_Time']= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()   
+        multi_output['Last_Updated_Time']= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()  
+        
         #Get lastupdate from pickle if it exists
-        if exists("lastUpdate.pkl"):
-            with open('lastUpdate.pkl', 'rb') as inp:
+        if exists(lastupdate):
+            with open(lastupdate, 'rb') as inp:
                 previousUpdate= pickle.load(inp)
             timediff=datetime.datetime.fromisoformat(multi_output['Last_Updated_Time'])-datetime.datetime.fromisoformat(previousUpdate)
             multi_output['Time_Since_Last_Update']=(((timediff.seconds*1000000)+timediff.microseconds)/1000000)
         
         #Save new time to pickle
-        with open('lastUpdate.pkl', 'wb') as outp:
+        with open(lastupdate, 'wb') as outp:
             pickle.dump(multi_output['Last_Updated_Time'], outp, pickle.HIGHEST_PROTOCOL)
 
         multi_output['status']="online"
@@ -97,7 +107,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         temp['result']="Error collecting registers: " + str(e)
         #Close Lockfile to allow access in the event of an error
         logger.error("Removing lock file due to read error")
-        os.remove(".lockfile")
+        os.remove(lockfile)
         return json.dumps(temp)
 
     if Print_Raw:
@@ -108,52 +118,48 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         multi_output['raw']=raw
 
     try:
-    #Total Energy Figures
+#Total Energy Figures
         logger.info("Getting Total Energy Data")
         energy_total_output['Export_Energy_Total_kWh']=GEInv.e_grid_out_total
-        energy_total_output['Battery_Throughput_Total_kWh']=GEInv.e_battery_throughput_total
-        energy_total_output['AC_Charge_Energy_Total_kWh']=GEInv.e_inverter_in_total
         energy_total_output['Import_Energy_Total_kWh']=GEInv.e_grid_in_total
         energy_total_output['Invertor_Energy_Total_kWh']=GEInv.e_inverter_out_total
         energy_total_output['PV_Energy_Total_kWh']=GEInv.e_pv_total
+        energy_total_output['AC_Charge_Energy_Total_kWh']=GEInv.e_inverter_in_total
         
         if  GEInv.inverter_model==Model.Hybrid:
-            energy_total_output['Load_Energy_Total_kWh']=(energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh'])
+            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh']),2)
         else:
-            energy_total_output['Load_Energy_Total_kWh']=(energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh'])+energy_total_output['PV_Energy_Total_kWh']
-        if GEInv.e_battery_charge_total==0 and GEInv.e_battery_discharge_total==0:        #If no values in "nomal" registers then grab from back up registers - for some f/w versions
-            energy_total_output['Battery_Charge_Energy_Total_kWh']=GEBat[0].e_battery_charge_total_2
-            energy_total_output['Battery_Discharge_Energy_Total_kWh']=GEBat[0].e_battery_discharge_total_2
-        else:
-            energy_total_output['Battery_Charge_Energy_Total_kWh']=GEInv.e_battery_charge_total
-            energy_total_output['Battery_Discharge_Energy_Total_kWh']=GEInv.e_battery_discharge_total
+            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh'])+energy_total_output['PV_Energy_Total_kWh'],2)
 
-        energy_total_output['Self_Consumption_Energy_Total_kWh']=energy_total_output['PV_Energy_Total_kWh']-energy_total_output['Export_Energy_Total_kWh']
+        energy_total_output['Self_Consumption_Energy_Total_kWh']=round(energy_total_output['PV_Energy_Total_kWh'],2)-round(energy_total_output['Export_Energy_Total_kWh'],2)
 
-        #Check for all zeros
-        checksum=0
-        for item in energy_total_output:
-            checksum=checksum+energy_total_output[item]
-        if checksum==0:
-            raise ValueError("All zeros returned by Invertor, skipping update")
 
 #Energy Today Figures
         logger.info("Getting Today Energy Data")
-        energy_today_output['Battery_Throughput_Today_kWh']=GEInv.e_battery_charge_day+GEInv.e_battery_discharge_day
         energy_today_output['PV_Energy_Today_kWh']=GEInv.e_pv1_day+GEInv.e_pv2_day
         energy_today_output['Import_Energy_Today_kWh']=GEInv.e_grid_in_day
         energy_today_output['Export_Energy_Today_kWh']=GEInv.e_grid_out_day
         energy_today_output['AC_Charge_Energy_Today_kWh']=GEInv.e_inverter_in_day
         energy_today_output['Invertor_Energy_Today_kWh']=GEInv.e_inverter_out_day
-        energy_today_output['Battery_Charge_Energy_Today_kWh']=GEInv.e_battery_charge_day
-        energy_today_output['Battery_Discharge_Energy_Today_kWh']=GEInv.e_battery_discharge_day
-        energy_today_output['Self_Consumption_Energy_Today_kWh']=energy_today_output['PV_Energy_Today_kWh']-energy_today_output['Export_Energy_Today_kWh']
+        energy_today_output['Self_Consumption_Energy_Today_kWh']=round(energy_today_output['PV_Energy_Today_kWh'],2)-round(energy_today_output['Export_Energy_Today_kWh'],2)
                 
         if GEInv.inverter_model==Model.Hybrid: 
-            energy_today_output['Load_Energy_Today_kWh']=(energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh'])
+            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh']),2)
         else:
-            energy_today_output['Load_Energy_Today_kWh']=(energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh'])+energy_today_output['PV_Energy_Today_kWh']
+            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh'])+energy_today_output['PV_Energy_Today_kWh'],2)
 
+        checksum=0
+        for item in energy_today_output:
+            checksum=checksum+energy_today_output[item]
+        if checksum==0 and GEInv.system_time.hour==0 and GEInv.system_time.minute==0 and exists(regcache):
+            #remove regcache at midnight
+            logger.critical("Energy Today is Zero and its midnight so resetting regCache")
+            os.remove(regcache)
+
+        #Grab previous data from Pickle and use it validate any outrageous changes
+        if exists(regcache):      # if there is a cache then grab it
+            with open(regcache, 'rb') as inp:
+                multi_output_old= pickle.load(inp)
         
 ############  Core Power Stats    ############
 
@@ -168,6 +174,9 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             power_output['PV_Power']= PV_power
         power_output['PV_Voltage_String_1']=GEInv.v_pv1
         power_output['PV_Voltage_String_2']=GEInv.v_pv2
+        power_output['PV_Current_String_1']=GEInv.i_pv1*10
+        power_output['PV_Current_String_2']=GEInv.i_pv2*10
+        
 
     #Grid Power
         logger.info("Getting Grid Power")
@@ -198,7 +207,6 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             power_output['AC_Charge_Power']= abs(Invertor_power)
         else:
             power_output['AC_Charge_Power']=0
-
     #Load Power
         logger.info("Getting Load Power")
         Load_power=GEInv.p_load_demand 
@@ -209,21 +217,6 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         logger.info("Getting Self Consumption Power")
         power_output['Self_Consumption_Power']=max(Load_power - import_power,0)
 
-    #Battery Power
-        Battery_power=GEInv.p_battery 
-        if Battery_power>=0:
-            discharge_power=abs(Battery_power)
-            charge_power=0
-        elif Battery_power<=0:
-            discharge_power=0
-            charge_power=abs(Battery_power)
-        power_output['Battery_Power']=Battery_power
-        power_output['Charge_Power']=charge_power
-        power_output['Discharge_Power']=discharge_power
-
-    #SOC
-        logger.info("Getting SOC")
-        power_output['SOC']=GEInv.battery_percent
 
 ############  Power Flow Stats    ############
 
@@ -232,45 +225,126 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         if PV_power>0:
             S2H=min(PV_power,Load_power)
             power_flow_output['Solar_to_House']=S2H
-            S2B=max((PV_power-S2H)-export_power,0)
-            power_flow_output['Solar_to_Battery']=S2B
-            power_flow_output['Solar_to_Grid']=max(PV_power - S2H - S2B,0)
+            power_flow_output['Solar_to_Grid']=export_power
 
         else:
             power_flow_output['Solar_to_House']=0
-            power_flow_output['Solar_to_Battery']=0
             power_flow_output['Solar_to_Grid']=0
-
-    #Battery to House
-        logger.info("Getting Battery to House Power Flow")
-        B2H=max(discharge_power-export_power,0)
-        power_flow_output['Battery_to_House']=B2H
 
     #Grid to Battery/House Power
         logger.info("Getting Grid to Battery/House Power Flow")
         if import_power>0:
-            power_flow_output['Grid_to_Battery']=charge_power-max(PV_power-Load_power,0)
-            power_flow_output['Grid_to_House']=max(import_power-charge_power,0)
-
+            power_flow_output['Grid_to_House']=import_power
         else:
-            power_flow_output['Grid_to_Battery']=0
             power_flow_output['Grid_to_House']=0
 
-    #Battery to Grid Power
-        logger.info("Getting Battery to Grid Power Flow")
-        if export_power>0:
-            power_flow_output['Battery_to_Grid']=max(discharge_power-B2H,0)
-        else:
-            power_flow_output['Battery_to_Grid']=0
+########### Battery Stats only if there are batteries...  #######
 
-    #Get Invertor Temperature
+        logger.info("Getting SOC")
+        if int(GiV_Settings.numBatteries)>0:     #only do this if there are batteries
+            if GEInv.battery_percent!=0:
+                power_output['SOC']=GEInv.battery_percent
+            elif GEInv.battery_percent==0 and 'multi_output_old' in locals():
+                power_output['SOC']=multi_output_old['Power']['Power']['SOC']
+                logger.error("\"Battery SOC\" reported as: "+str(GEInv.battery_percent)+"% so using previous value")
+            elif GEInv.battery_percent==0 and not 'multi_output_old' in locals():
+                power_output['SOC']=1
+                logger.error("\"Battery SOC\" reported as: "+str(GEInv.battery_percent)+"% and no previou value so setting to 1%")
+
+        ### Energy Stats
+            energy_today_output['Battery_Charge_Energy_Today_kWh']=GEInv.e_battery_charge_day
+            energy_today_output['Battery_Discharge_Energy_Today_kWh']=GEInv.e_battery_discharge_day
+            energy_today_output['Battery_Throughput_Today_kWh']=GEInv.e_battery_charge_day+GEInv.e_battery_discharge_day
+            energy_total_output['Battery_Throughput_Total_kWh']=GEInv.e_battery_throughput_total
+            if GEInv.e_battery_charge_total==0 and GEInv.e_battery_discharge_total==0:        #If no values in "nomal" registers then grab from back up registers - for some f/w versions
+                energy_total_output['Battery_Charge_Energy_Total_kWh']=GEBat[0].e_battery_charge_total_2
+                energy_total_output['Battery_Discharge_Energy_Total_kWh']=GEBat[0].e_battery_discharge_total_2
+            else:
+                energy_total_output['Battery_Charge_Energy_Total_kWh']=GEInv.e_battery_charge_total
+                energy_total_output['Battery_Discharge_Energy_Total_kWh']=GEInv.e_battery_discharge_total
+        ### Battery Power
+            Battery_power=GEInv.p_battery 
+            if Battery_power>=0:
+                discharge_power=abs(Battery_power)
+                charge_power=0
+            elif Battery_power<=0:
+                discharge_power=0
+                charge_power=abs(Battery_power)
+            power_output['Battery_Power']=Battery_power
+            power_output['Charge_Power']=charge_power
+            power_output['Discharge_Power']=discharge_power
+
+        ### Power flows
+            logger.info("Getting Solar to H/B/G Power Flows")
+            if PV_power>0:
+                S2H=min(PV_power,Load_power)
+                power_flow_output['Solar_to_House']=S2H
+                S2B=max((PV_power-S2H)-export_power,0)
+                power_flow_output['Solar_to_Battery']=S2B
+                power_flow_output['Solar_to_Grid']=max(PV_power - S2H - S2B,0)
+
+            else:
+                power_flow_output['Solar_to_House']=0
+                power_flow_output['Solar_to_Battery']=0
+                power_flow_output['Solar_to_Grid']=0
+        #Battery to House
+            logger.info("Getting Battery to House Power Flow")
+            B2H=max(discharge_power-export_power,0)
+            power_flow_output['Battery_to_House']=B2H
+
+        #Grid to Battery/House Power
+            logger.info("Getting Grid to Battery/House Power Flow")
+            if import_power>0:
+                power_flow_output['Grid_to_Battery']=charge_power-max(PV_power-Load_power,0)
+                power_flow_output['Grid_to_House']=max(import_power-charge_power,0)
+
+            else:
+                power_flow_output['Grid_to_Battery']=0
+                power_flow_output['Grid_to_House']=0
+
+        #Battery to Grid Power
+            logger.info("Getting Battery to Grid Power Flow")
+            if export_power>0:
+                power_flow_output['Battery_to_Grid']=max(discharge_power-B2H,0)
+            else:
+                power_flow_output['Battery_to_Grid']=0
+
+        #Check for all zeros
+        checksum=0
+        for item in energy_total_output:
+            checksum=checksum+energy_total_output[item]
+        if checksum==0:
+            raise ValueError("All zeros returned by Invertor, skipping update")
 
 
     #Combine all outputs
         energy={}
-        energy["Total"]=energy_total_output
+
+        # Validate for non-zero data if so, use the last known good value
+        if 'multi_output_old' in locals():
+            for key in energy_total_output:
+                if energy_total_output[key]==0 or round(energy_total_output[key],2)<round(multi_output_old['Energy']['Total'][key],2):    #dont accept 0 or a lower value than last time
+                    logger.error(key+" reported as: "+str(round(energy_total_output[key],2))+"kWh so using previous value of: "+str(round(multi_output_old['Energy']['Total'][key],2)))
+                    energy_total_output[key]=round(multi_output_old['Energy']['Total'][key],2)
+            for key in energy_today_output:
+                if  energy_today_output[key]==0 and not (GEInv.system_time.hour==0 and GEInv.system_time.minute==0) and not(multi_output_old['Energy']['Today'][key]==0):     # dont accept 0 value unless it midnight
+                    logger.error(key+" reported as: "+str(round(energy_today_output[key],2))+"kWh so using previous value of: "+str(round(multi_output_old['Energy']['Today'][key],2)))
+                    energy_today_output[key]=round(multi_output_old['Energy']['Today'][key],2)
+                elif round(energy_today_output[key],2)<round(multi_output_old['Energy']['Today'][key],2) and not (GEInv.system_time.hour==0 and GEInv.system_time.minute==0):                                 # don't accept a lower value than last time, unless its midnight
+                    logger.error(key+" reported as: "+str(round(energy_today_output[key],2))+"kWh so using previous value of: "+str(round(multi_output_old['Energy']['Today'][key],2)))
+                    energy_today_output[key]=round(multi_output_old['Energy']['Today'][key],2)
+
         energy["Today"]=energy_today_output
+        energy["Total"]=energy_total_output
+
+        #Perform rate calcs
+
+        energy["Rates"]=ratecalcs(GEInv.e_grid_in_total)
+        if (energy['Today']['Load_Energy_Today_kWh'])!=0:
+            energy["Rates"]['Average_ppkwh_today']=(energy["Rates"]['day_cost']+energy["Rates"]['night_cost'])/(energy['Today']['Load_Energy_Today_kWh'])
+
         multi_output["Energy"]=energy
+
         power={}
         power["Power"]=power_output
         power["Flows"]=power_flow_output
@@ -297,11 +371,11 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             discharge_enable="disable"
 
         #Get Charge/Discharge Active status
-        discharge_rate=GEInv.battery_discharge_limit*3
-        if discharge_rate>100: discharge_rate=100
+        discharge_rate=min(GEInv.battery_discharge_limit*3,100)
+        #if discharge_rate>100: discharge_rate=100
         
-        charge_rate=GEInv.battery_charge_limit*3
-        if charge_rate>100: charge_rate=100
+        charge_rate=min(GEInv.battery_charge_limit*3,100)
+        #if charge_rate>100: charge_rate=100
 
         #Calculate Mode
         logger.info("Calculating Mode...")
@@ -368,7 +442,13 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             logger.info("Building battery output: ")
             battery={}
             battery['Battery_Serial_Number']=b.battery_serial_number
-            battery['Battery_SOC']=b.battery_soc
+            if b.battery_soc!=0:
+                battery['Battery_SOC']=b.battery_soc
+            elif b.battery_soc==0 and 'multi_output_old' in locals(): 
+                battery['Battery_SOC']=multi_output_old['Battery_Details'][b.battery_serial_number]['Battery_SOC']
+            elif b.battery_soc==0 and not 'multi_output_old' in locals():
+                battery['Battery_SOC']=1
+
             battery['Battery_Capacity']=b.battery_full_capacity
             battery['Battery_Design_Capacity']=b.battery_design_capacity
             battery['Battery_Remaining_Capcity']=b.battery_remaining_capacity
@@ -398,6 +478,12 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             battery['Battery_Cell_2_Temperature'] = b.temp_battery_cells_2
             battery['Battery_Cell_3_Temperature'] = b.temp_battery_cells_3
             battery['Battery_Cell_4_Temperature'] = b.temp_battery_cells_4
+            battery['Invertor_Serial_Number'] = GEInv.inverter_serial_number
+
+            if 'multi_output_old' in locals():
+                for i in battery:
+                    battery[i]=dataSmoother(battery[i],multi_output_old['Battery_Details'][b.battery_serial_number][i],multi_output_old['Last_Updated_Time'])
+        
             batteries2[b.battery_serial_number]=battery
 
         #Create multioutput and publish
@@ -406,7 +492,8 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         multi_output["Invertor_Details"]=invertor
         multi_output["Battery_Details"]=batteries2
 
-        with open('regCache.pkl', 'wb') as outp:
+        # Save new data to Pickle
+        with open(regcache, 'wb') as outp:
             pickle.dump(multi_output, outp, pickle.HIGHEST_PROTOCOL)
         result['result']="Success retrieving data"
     except:
@@ -419,6 +506,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
 def runAll(full_refresh):       #Read from Invertor put in cache and publish
     #full_refresh=True
     result=getData(full_refresh)
+    # Step here to validate data against previous pickle?
     multi_output=pubFromPickle()
     return multi_output
 
@@ -431,10 +519,10 @@ def pubFromJSON():
 def pubFromPickle():        #Publish last cached Invertor Data
     multi_output={}
     result="Success"
-    if not exists("regCache.pkl"):      #if there is no cache, create it
+    if not exists(regcache):      #if there is no cache, create it
         result=getData(True)
     if "Success" in result:
-        with open('regCache.pkl', 'rb') as inp:
+        with open(regcache, 'rb') as inp:
             multi_output= pickle.load(inp)
         SN=multi_output["Invertor_Details"]['Invertor_Serial_Number']
         publishOutput(multi_output,SN)
@@ -442,31 +530,21 @@ def pubFromPickle():        #Publish last cached Invertor Data
         multi_output['result']="Failure to find data cache"
     return json.dumps(multi_output, indent=4, sort_keys=True, default=str)
 
-def self_run(loop_timer):
-    quick_loop_timer=int(loop_timer[0])
-    full_loop_timer=quick_loop_timer*3
-    fullRefresh=True
-    schedule.every(quick_loop_timer).seconds.do(runAll,True)
-    #schedule.every(full_loop_timer).seconds.do(runAll(True))
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
 def self_run2():
     counter=0
-    runAll(True)
+    runAll("True")
     while True:
         counter=counter+1
-        if exists(".forceFullRefresh"):
-            runAll(True)
-            os.remove(".forceFullRefresh")
+        if exists(forcefullrefresh):
+            runAll("True")
+            os.remove(forcefullrefresh)
             counter=0
         elif counter==20:
             counter=0
-            runAll(True)
+            runAll("True")
         else:
-            runAll(False)
-        time.sleep(1)
+            runAll("False")
+        time.sleep(GiV_Settings.self_run_timer)
 
 
 ####### Addiitonal Publish options can be added here. 
@@ -543,9 +621,95 @@ def iterate_dict(array):        # Create a publish safe version of the output (c
             safeoutput[p_load]=output
     return(safeoutput)
 
+def ratecalcs(import_energy):
+    rate_data={}
+    #check if pickle data exists:
+    if exists(ratedata):
+        with open(ratedata, 'rb') as inp:
+            rate_data= pickle.load(inp)
+
+    # if midnight then reset costs
+    if datetime.datetime.now().hour==0 and datetime.datetime.now().minute==0:
+        rate_data['night_cost']=0.00
+        rate_data['day_cost']=0.00
+        rate_data['night_energy']=0.00
+        rate_data['day_energy']=0.00
+        rate_data['day_start_energy']=import_energy
+        rate_data['night_start_energy']=import_energy
+
+    logger.info("Calculating current tariff costs")
+    if datetime.datetime.strptime(GiV_Settings.day_rate_start, '%H:%M').hour == datetime.datetime.now().hour and datetime.datetime.strptime(GiV_Settings.day_rate_start, '%H:%M').minute == datetime.datetime.now().minute:
+        #Save current Total stats as baseline
+        logger.info("Saving current energy stats at start of day rate tariff")
+        rate_data['day_start_energy']=import_energy
+    elif datetime.datetime.strptime(GiV_Settings.night_rate_start, '%H:%M').hour == datetime.datetime.now().hour and datetime.datetime.strptime(GiV_Settings.night_rate_start, '%H:%M').minute == datetime.datetime.now().minute:
+        #Save current Total stats as baseline
+        logger.info("Saving current energy stats at start of night rate tariff")
+        rate_data['night_start_energy']=import_energy
+    
+    #If no data then just save current import as base data
+    if not('night_start_energy' in rate_data):
+        rate_data['night_start_energy']=import_energy
+    if not('day_start_energy' in rate_data):
+        rate_data['day_start_energy']=import_energy
+    if not('night_energy' in rate_data):
+        rate_data['night_energy']=0.00
+    if not('day_energy' in rate_data):
+        rate_data['day_energy']=0.00
+    if not('night_cost' in rate_data):
+        rate_data['night_cost']=0.00
+    if not('day_cost' in rate_data):
+        rate_data['day_cost']=0.00
+    
+    # now calc the difference for each value between the correct start pickle and now
+
+    night_start=datetime.datetime.combine(datetime.datetime.now().date(),datetime.datetime.strptime(GiV_Settings.night_rate_start, '%H:%M').time())
+    day_start=datetime.datetime.combine(datetime.datetime.now().date(),datetime.datetime.strptime(GiV_Settings.day_rate_start, '%H:%M').time())
+
+    if night_start <= datetime.datetime.now() < day_start:
+        rate_data['night_energy']=import_energy-rate_data['night_start_energy']
+        rate_data['night_cost']=rate_data['night_energy']*float(GiV_Settings.night_rate)
+        rate_data['current_rate']=GiV_Settings.night_rate
+        
+    else:
+        rate_data['day_energy']=import_energy-rate_data['day_start_energy']
+        rate_data['day_cost']=rate_data['day_energy']*float(GiV_Settings.day_rate)
+        rate_data['current_rate']=GiV_Settings.day_rate
+
+    rate_data['day_rate']= GiV_Settings.day_rate
+    rate_data['night_rate']= GiV_Settings.night_rate
+    rate_data['export_rate']=GiV_Settings.export_rate
+
+
+    # dump current data to Pickle
+    with open(ratedata, 'wb') as outp:
+        pickle.dump(rate_data, outp, pickle.HIGHEST_PROTOCOL)
+
+    return (rate_data)
+
+def dataSmoother(dataNew, dataOld, lastUpdate):
+    ### perform test to validate data and smooth out spikes
+    if isinstance(dataNew,int) or isinstance(dataNew,float):
+        ### Remove High velocity changes
+        if dataNew!=0:
+            then=datetime.datetime.fromisoformat(lastUpdate)
+            now=datetime.datetime.now(then.tzinfo)
+            timeDelta=(now-then).total_seconds()
+            dataDelta=dataNew-dataOld
+            if abs(dataDelta/dataNew) > 0.25 and timeDelta<60:
+                data=dataOld
+                logger.info("Datapoint jumped too far in a single read, using previous value")
+            else:
+                data=dataNew
+        else:
+            data=dataNew   
+    else:
+        data=dataNew
+    return(data)
 
 if __name__ == '__main__':
     if len(sys.argv)==2:
         globals()[sys.argv[1]]()
     elif len(sys.argv)==3:
         globals()[sys.argv[1]](sys.argv[2])
+        

@@ -6,5 +6,5 @@ schedule
 influxdb_client
 requests
 flask
-flask_cors
 pickle-mixin
+flask-cors

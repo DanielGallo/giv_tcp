@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # version 2021.12.22
-
 from flask import Flask, json, request
 from flask_cors import CORS
-import GivTCP.read as rd       #grab passthrough functions from main read file
+import read as rd       #grab passthrough functions from main read file
 import write as wr      #grab passthrough functions from main write file
 
 #set-up Flask details
