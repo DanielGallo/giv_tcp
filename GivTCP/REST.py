@@ -11,91 +11,91 @@ CORS(giv_api)
 
 #Proxy Read Functions
 
-#Read from Invertor put in cache and publish
+#Read from Inverter put in cache and publish
 @giv_api.route('/runAll', methods=['GET'])
 def getAll():
-    return rd.runAll(True)
+    return rd.runAll(True), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
-#Publish last cached Invertor Data
+#Publish last cached Inverter Data
 @giv_api.route('/readData', methods=['GET'])
 def rdData():
-    return rd.pubFromPickle()
+    return rd.pubFromPickle(), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
-#Read from Invertor put in cache 
+#Read from Inverter put in cache
 @giv_api.route('/getData', methods=['GET'])
 def gtData():
-    return rd.getData()
+    return rd.getData(), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 #Proxy Write Functions
 @giv_api.route('/enableChargeTarget', methods=['POST'])
 def enChargeTrgt():
     payload = request.get_json(silent=True, force=True)
-    return wr.enableChargeTarget(payload)
+    return wr.enableChargeTarget(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
     
 @giv_api.route('/enableChargeSchedule', methods=['POST'])
 def enableChrgSchedule():
     payload = request.get_json(silent=True, force=True)
-    return wr.enableChargeSchedule(payload)
+    return wr.enableChargeSchedule(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/enableDischargeSchedule', methods=['POST'])
 def enableDischrgSchedule():
     payload = request.get_json(silent=True, force=True)
-    return wr.enableDischargeSchedule(payload)
+    return wr.enableDischargeSchedule(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/enableDischarge', methods=['POST'])
 def enableBatDisharge():
     payload = request.get_json(silent=True, force=True)
-    return wr.enableDischarge(payload)
+    return wr.enableDischarge(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setChargeTarget', methods=['POST'])
 def setChrgTarget():
     payload = request.get_json(silent=True, force=True)
-    return wr.setChargeTarget(payload)
+    return wr.setChargeTarget(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setBatteryReserve', methods=['POST'])
 def setBattReserve():
     payload = request.get_json(silent=True, force=True)
-    return wr.setBatteryReserve(payload)
+    return wr.setBatteryReserve(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setChargeRate', methods=['POST'])
 def setChrgeRate():
     payload = request.get_json(silent=True, force=True)
-    return wr.setChargeRate(payload)
+    return wr.setChargeRate(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setDischargeRate', methods=['POST'])
 def setDischrgeRate():
     payload = request.get_json(silent=True, force=True)
-    return wr.setDischargeRate(payload)
+    return wr.setDischargeRate(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setChargeSlot1', methods=['POST'])
 def setChrgSlot1():
     payload = request.get_json(silent=True, force=True)
-    return wr.setChargeSlot1(payload)
+    return wr.setChargeSlot1(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setChargeSlot2', methods=['POST'])
 def setChrgSlot2():
     payload = request.get_json(silent=True, force=True)
-    return wr.setChargeSlot2(payload)
+    return wr.setChargeSlot2(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setDischargeSlot1', methods=['POST'])
 def setDischrgSlot1():
     payload = request.get_json(silent=True, force=True)
-    return wr.setDischargeSlot1(payload)
+    return wr.setDischargeSlot1(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setDischargeSlot2', methods=['POST'])
 def setDischrgSlot2():
     payload = request.get_json(silent=True, force=True)
-    return wr.setDischargeSlot2(payload)
+    return wr.setDischargeSlot2(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setBatteryMode', methods=['POST'])
 def setBattMode():
     payload = request.get_json(silent=True, force=True)
-    return wr.setBatteryMode(payload)
+    return wr.setBatteryMode(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 @giv_api.route('/setDateTime', methods=['POST'])
 def setDate():
     payload = request.get_json(silent=True, force=True)
-    return wr.setDateTime(payload)
+    return wr.setDateTime(payload), 200, { 'Content-Type': 'application/json; charset=utf-8' }
 
 if __name__ == "__main__":
     giv_api.run()

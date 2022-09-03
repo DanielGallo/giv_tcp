@@ -109,7 +109,7 @@ def on_connect(client, userdata, flags, rc):
     if rc==0:
         client.connected_flag=True #set flag
         logger.info("connected OK Returned code="+str(rc))
-        #Subscribe to the control topic for this invertor - relies on serial_number being present
+        #Subscribe to the control topic for this inverter - relies on serial_number being present
         client.subscribe(MQTT_Topic+"/control/"+GiV_Settings.serial_number+"/#")
         logger.info("Subscribing to "+MQTT_Topic+"/control/"+GiV_Settings.serial_number+"/#")
     else:

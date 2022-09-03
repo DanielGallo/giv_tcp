@@ -15,7 +15,7 @@ mqttClient={}
 gunicorn={}
 webDash={}
 
-# Check if config firectory exists and creates it if not
+# Check if config directory exists and creates it if not
 
 def job():
     import GivTCP.palm_soc
@@ -26,24 +26,24 @@ if not os.path.exists('/config/GivTCP'):
 else:
     logger.critical("Config directory already exists")
 
-for inv in range(1,int(os.getenv('NUMINVERTORS'))+1):
-    logger.critical ("Instance is inv: "+str(inv)+"/"+str(os.getenv('NUMINVERTORS')))
+for inv in range(1,int(os.getenv('NUMINVERTERS'))+1):
+    logger.critical ("Instance is inv: "+str(inv)+"/"+str(os.getenv('NUMINVERTERS')))
     PATH= "/app/GivTCP_"+str(inv)
-    PATH2= "/app/GivEnergy-Smart-Home-Display-givtcp_"+str(inv)
+    PATH2= "/app/WebDashboard_"+str(inv)
 
     # Create folder per instance
     if not exists(PATH):
         shutil.copytree("/app/GivTCP", PATH)
-        shutil.copytree("/app/GivEnergy-Smart-Home-Display-givtcp", PATH2)
+        shutil.copytree("/app/WebDashboard", PATH2)
     # Remove old settings file
     if exists(PATH+"/settings.py"):
         os.remove(PATH+"/settings.py")
     FILENAME=""
     # create settings file
-    logger.critical ("Recreating settings.py for invertor "+str(inv))
+    logger.critical ("Recreating settings.py for inverter "+str(inv))
     with open(PATH+"/settings.py", 'w') as outp:
         outp.write("class GiV_Settings:\n")
-        outp.write("    invertorIP=\""+str(os.getenv("INVERTOR_IP_"+str(inv)))+"\"\n")
+        outp.write("    inverterIP=\""+str(os.getenv("INVERTER_IP_"+str(inv)))+"\"\n")
         outp.write("    numBatteries=\""+str(os.getenv("NUMBATTERIES_"+str(inv))+"\"\n"))
         outp.write("    Print_Raw_Registers=\""+str(os.getenv("PRINT_RAW"))+"\"\n")
         outp.write("    MQTT_Output="+str(os.getenv("MQTT_OUTPUT")+"\n"))
@@ -84,7 +84,7 @@ for inv in range(1,int(os.getenv('NUMINVERTORS'))+1):
 
     os.chdir(PATH)
     if os.getenv('SELF_RUN')=="True":
-        logger.critical ("Running Invertor read loop every "+str(os.getenv('SELF_RUN_LOOP_TIMER')))
+        logger.critical ("Running Inverter read loop every "+str(os.getenv('SELF_RUN_LOOP_TIMER')))
         selfRun[inv]=subprocess.Popen(["/usr/local/bin/python3",PATH+"/read.py", "self_run2"])
     if os.getenv('MQTT_OUTPUT')=="True":
         logger.critical ("Subscribing Mosquitto on port "+str(os.getenv('MQTT_PORT')))
@@ -120,12 +120,12 @@ if os.getenv('MQTT_ADDRESS')=="127.0.0.1" and os.getenv('MQTT_OUTPUT')=="True":
 
 # Loop round checking all processes are running
 while True:
-    for inv in range(1,int(os.getenv('NUMINVERTORS'))+1):
+    for inv in range(1,int(os.getenv('NUMINVERTERS'))+1):
         PATH= "/app/GivTCP_"+str(inv)
         if os.getenv('SELF_RUN')==True and not selfRun[inv].poll()==None:
             logger.error("Self Run loop process died. restarting...")
             os.chdir(PATH)
-            logger.critical ("Running Invertor read loop every "+str(os.getenv('SELF_RUN_LOOP_TIMER')))
+            logger.critical ("Running Inverter read loop every "+str(os.getenv('SELF_RUN_LOOP_TIMER')))
             selfRun[inv]=subprocess.Popen(["/usr/local/bin/python3",PATH+"/read.py", "self_run2"])
         elif os.getenv('MQTT_OUTPUT')==True and not mqttClient[inv].poll()==None:
             logger.error("MQTT Client process died. Restarting...")

@@ -1,12 +1,12 @@
 # version 2022.01.31
 class GiV_Settings:
-    numInvertors=1                  #Required - Number of different invertors you want to connect to (MAX 4)
-    invertorIP_1=""                 #Required - IP address of first Invertor on local network
-    invertorIP_2=""                 #Optional - IP address of second Invertor on local network. More lines like this can be added for each invertor. The number of these lines must match the numInvertors line above
-    numBatteries_1=1                #Required - The number of batteries connected the first invertor
-    numBatteries_2=1                #Optional - The number of batteries connected the second invertor. More lines like this can be added for each invertor. The number of these lines must match the numInvertors line above
+    numInverters=1                  #Required - Number of different inverters you want to connect to (MAX 4)
+    inverterIP_1=""                 #Required - IP address of first Inverter on local network
+    inverterIP_2=""                 #Optional - IP address of second Inverter on local network. More lines like this can be added for each inverter. The number of these lines must match the numInverters line above
+    numBatteries_1=1                #Required - The number of batteries connected the first inverter
+    numBatteries_2=1                #Optional - The number of batteries connected the second inverter. More lines like this can be added for each inverter. The number of these lines must match the numInverters line above
     HA_Auto_D=True                  #Optional - Bool - Publishes Home assistant MQTT Auto Discovery messages to push data into HA automagically (requires MQTT to be enabled below)
-    self_run_timer=1                #Required - The wait time between invertor read calls. Can be as low as 1 or longer if you want to allow the cloud portal a better chance of polling
+    self_run_timer=1                #Required - The wait time between inverter read calls. Can be as low as 1 or longer if you want to allow the cloud portal a better chance of polling
 #Debug Settings
     Log_Level="Error"               #Optional - Enables logging level. Default is "Error", but can be "Info" or "Debug"
     Debug_File_Location=""          #Optional - Location of logs (Default is console)

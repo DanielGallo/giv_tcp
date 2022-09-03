@@ -34,9 +34,9 @@ def enableChargeTarget(payload):
     temp={}
     try:
         if payload['state']=="enable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).enable_charge_target()
+            GivEnergyClient(host=GiV_Settings.inverterIP).enable_charge_target()
         elif payload['state']=="disable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).disable_charge_target()
+            GivEnergyClient(host=GiV_Settings.inverterIP).disable_charge_target()
         temp['result']="Setting Charge Target was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -49,9 +49,9 @@ def enableChargeSchedule(payload):
     temp={}
     try:
         if payload['state']=="enable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).enable_charge()
+            GivEnergyClient(host=GiV_Settings.inverterIP).enable_charge()
         elif payload['state']=="disable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).disable_charge()
+            GivEnergyClient(host=GiV_Settings.inverterIP).disable_charge()
         temp['result']="Setting Charge Enable was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -64,9 +64,9 @@ def enableDischargeSchedule(payload):
     temp={}
     try:
         if payload['state']=="enable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).enable_discharge()
+            GivEnergyClient(host=GiV_Settings.inverterIP).enable_discharge()
         elif payload['state']=="disable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).disable_discharge()
+            GivEnergyClient(host=GiV_Settings.inverterIP).disable_discharge()
         temp['result']="Setting Charge Enable was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -78,7 +78,7 @@ def enableDischargeSchedule(payload):
 def setShallowCharge(payload):
     temp={}
     try:
-        GivEnergyClient(host=GiV_Settings.invertorIP).set_shallow_charge(int(payload['val']))
+        GivEnergyClient(host=GiV_Settings.inverterIP).set_shallow_charge(int(payload['val']))
         temp['result']="Setting Charge Enable was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -91,9 +91,9 @@ def enableDischarge(payload):
     temp={}
     try:
         if payload['state']=="enable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).set_shallow_charge(4)
+            GivEnergyClient(host=GiV_Settings.inverterIP).set_shallow_charge(4)
         elif payload['state']=="disable":
-            GivEnergyClient(host=GiV_Settings.invertorIP).set_shallow_charge(100)
+            GivEnergyClient(host=GiV_Settings.inverterIP).set_shallow_charge(100)
         temp['result']="Setting Discharge Enable was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -107,7 +107,7 @@ def setChargeTarget(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     target=int(payload['chargeToPercent'])
     try:
-        client=GivEnergyClient(host=GiV_Settings.invertorIP)
+        client=GivEnergyClient(host=GiV_Settings.inverterIP)
         client.enable_charge_target(target)
         temp['result']="Setting Charge Target was a success"
         open(forcefullrefresh, 'w').close()
@@ -125,7 +125,7 @@ def setBatteryReserve(payload):
     if target<4: target=4
     logger.info ("Setting battery reserve target to: " + str(target))
     try:
-        GivEnergyClient(host=GiV_Settings.invertorIP).set_battery_power_reserve(target)
+        GivEnergyClient(host=GiV_Settings.inverterIP).set_battery_power_reserve(target)
         temp['result']="Setting Battery Reserve was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -144,7 +144,7 @@ def setChargeRate(payload):
         target=int(int(payload['chargeRate'])/3)
     logger.info ("Setting battery charge rate to: " + str(target))
     try:
-        GivEnergyClient(host=GiV_Settings.invertorIP).set_battery_charge_limit(target)
+        GivEnergyClient(host=GiV_Settings.inverterIP).set_battery_charge_limit(target)
         temp['result']="Setting Charge Rate was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -164,7 +164,7 @@ def setDischargeRate(payload):
         target=int(int(payload['dischargeRate'])/3)
     logger.info ("Setting battery discharge rate to: " + str(target))
     try:
-        GivEnergyClient(host=GiV_Settings.invertorIP).set_battery_discharge_limit(target)
+        GivEnergyClient(host=GiV_Settings.inverterIP).set_battery_discharge_limit(target)
         temp['result']="Setting Discharge Rate was a success"
         open(forcefullrefresh, 'w').close()
     except:
@@ -181,7 +181,7 @@ def setChargeSlot1(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     if 'chargeToPercent' in payload.keys():
         targetresult=setChargeTarget(payload)
-    client=GivEnergyClient(host=GiV_Settings.invertorIP)
+    client=GivEnergyClient(host=GiV_Settings.inverterIP)
     try:
         client.set_charge_slot_1((datetime.strptime(payload['start'],"%H:%M"),datetime.strptime(payload['finish'],"%H:%M")))
         temp['result']="Setting Charge Slot 1 was a success"
@@ -199,7 +199,7 @@ def setChargeSlot2(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     if 'chargeToPercent' in payload.keys():
         targetresult=setChargeTarget(payload)
-    client=GivEnergyClient(host=GiV_Settings.invertorIP)
+    client=GivEnergyClient(host=GiV_Settings.inverterIP)
     try:
         client.set_charge_slot_2((datetime.strptime(payload['start'],"%H:%M"),datetime.strptime(payload['finish'],"%H:%M")))
         temp['result']="Setting Charge Slot 2 was a success"
@@ -217,7 +217,7 @@ def setDischargeSlot1(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     if 'dischargeToPercent' in payload.keys():
         targetresult=setBatteryReserve(payload)
-    client=GivEnergyClient(host=GiV_Settings.invertorIP)
+    client=GivEnergyClient(host=GiV_Settings.inverterIP)
     try:
         client.set_discharge_slot_1((datetime.strptime(payload['start'],"%H:%M"),datetime.strptime(payload['finish'],"%H:%M")))
         temp['result']="Setting Discharge Slot 1 was a success"
@@ -235,7 +235,7 @@ def setDischargeSlot2(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     if 'dischargeToPercent' in payload.keys():
         targetresult=setBatteryReserve(payload)
-    client=GivEnergyClient(host=GiV_Settings.invertorIP)
+    client=GivEnergyClient(host=GiV_Settings.inverterIP)
     try:
         client.set_discharge_slot_2((datetime.strptime(payload['start'],"%H:%M"),datetime.strptime(payload['finish'],"%H:%M")))
         temp['result']="Setting Discharge Slot 2 was a success"
@@ -252,15 +252,15 @@ def setBatteryMode(payload):
     if type(payload) is not dict: payload=json.loads(payload)
     try:
         if payload['mode']=="Eco":
-            client=GivEnergyClient(host=GiV_Settings.invertorIP).set_mode_dynamic()
+            client=GivEnergyClient(host=GiV_Settings.inverterIP).set_mode_dynamic()
         if payload['mode']=="Eco (Paused)":
-            client=GivEnergyClient(host=GiV_Settings.invertorIP).set_mode_dynamic()
-            client=GivEnergyClient(host=GiV_Settings.invertorIP).set_shallow_charge(100)
+            client=GivEnergyClient(host=GiV_Settings.inverterIP).set_mode_dynamic()
+            client=GivEnergyClient(host=GiV_Settings.inverterIP).set_shallow_charge(100)
         
         elif payload['mode']=="Timed Demand":
-            client=GivEnergyClient(host=GiV_Settings.invertorIP).set_mode_storage()
+            client=GivEnergyClient(host=GiV_Settings.inverterIP).set_mode_storage()
         elif payload['mode']=="Timed Export":
-            client=GivEnergyClient(host=GiV_Settings.invertorIP).set_mode_storage(export=True)
+            client=GivEnergyClient(host=GiV_Settings.inverterIP).set_mode_storage(export=True)
         else:
             logger.info ("Invalid Mode requested: "+ payload['mode'])
             temp['result']="Invalid Mode requested"
@@ -280,9 +280,9 @@ def setDateTime(payload):
     #convert payload to dateTime components
     try:
         iDateTime=datetime.strptime(payload['dateTime'],"%d/%m/%Y %H:%M:%S")   #format '12/11/2021 09:15:32'
-        #Set Date and Time on Invertor
-        GivEnergyClient(host=GiV_Settings.invertorIP).set_datetime(iDateTime)
-        temp['result']="Invertor time setting was a success"
+        #Set Date and Time on Inverter
+        GivEnergyClient(host=GiV_Settings.inverterIP).set_datetime(iDateTime)
+        temp['result']="Inverter time setting was a success"
         open(forcefullrefresh, 'w').close()
     except:
         e = sys.exc_info()

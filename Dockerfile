@@ -15,8 +15,6 @@ RUN apk add xsel
 # set the working directory in the container
 WORKDIR /app
 
-#RUN git clone --branch givtcp https://github.com/DanielGallo/GivEnergy-Smart-Home-Display.git
-
 # copy the dependencies file to the working directory
 COPY requirements.txt .
 
@@ -25,13 +23,13 @@ RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
 COPY GivTCP/ ./GivTCP
-COPY GivEnergy-Smart-Home-Display-givtcp/ ./GivEnergy-Smart-Home-Display-givtcp
+COPY WebDashboard/ ./WebDashboard
 
 COPY startup.py startup.py
 
-ENV NUMINVERTORS=1
-ENV INVERTOR_IP_1=""
-ENV NUMBATTERIES_1=1
+ENV NUMINVERTERS=1
+ENV INVERTER_IP_1="10.0.0.111"
+ENV NUMBATTERIES_1=2
 ENV MQTT_OUTPUT="True"
 ENV MQTT_ADDRESS="127.0.0.1"
 ENV MQTT_USERNAME=""
@@ -51,10 +49,10 @@ ENV INFLUX_ORG=""
 ENV HA_AUTO_D=True
 ENV HADEVICEPREFIX="GivTCP"
 ENV PYTHONPATH="/app"
-ENV DAYRATE=0.155
-ENV NIGHTRATE=0.055
-ENV EXPORTRATE=0.04
-ENV HOSTIP="192.168.2.10"
+ENV DAYRATE=0.138
+ENV NIGHTRATE=0.05
+ENV EXPORTRATE=0.041
+ENV HOSTIP="10.0.0.230"
 ENV DAYRATESTART="04:30"
 ENV NIGHTRATESTART="00:30"
 ENV TZ="Europe/London"
@@ -65,7 +63,6 @@ ENV SMARTTARGET=True
 ENV GEAPI=""
 ENV SOLCASTAPI=""
 ENV SOLCASTSITEID=""
-
 
 EXPOSE 6345 1883 3000
 

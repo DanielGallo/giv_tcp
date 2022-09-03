@@ -4,7 +4,7 @@
 
 # If only 1 inertor then just launch startup.sh in the standard folder!
 
-for i in $(seq 1 $NUMINVERTORS)
+for i in $(seq 1 $NUMINVERTERS)
 do
     # Set path to new folder
     PATH=/app/GivTCP_"${i}"
@@ -19,7 +19,7 @@ do
     # create settings.py file in the directory
     FILE=${PATH}/settings.py
     FILE2=${PATH}/startup.sh
-    FILE3=/app/GivEnergy-Smart-Home-Display-givtcp/app.json
+    FILE3=/app/WebDashboard/app.json
 
     #Remove settings file if its already there
     if [ -f "$FILE" ]
@@ -61,20 +61,20 @@ do
     ############################
     ### Create Settings File ###
     ############################
-    echo "Creating settings.py for Invertor ${i}"
+    echo "Creating settings.py for Inverter ${i}"
 
     printf "class GiV_Settings:\n" >> "$FILE"
     if [ "$i" = 1 ]; then
-        printf "    invertorIP=\"$INVERTOR_IP_1\"\n" >> "$FILE"
+        printf "    inverterIP=\"$INVERTER_IP_1\"\n" >> "$FILE"
         printf "    numBatteries=\"$NUMBATTERIES_1\"\n" >> "$FILE"
     elif [ "$i" = 2 ]; then
-        printf "    invertorIP=\"$INVERTOR_IP_2\"\n" >> "$FILE"
+        printf "    inverterIP=\"$INVERTER_IP_2\"\n" >> "$FILE"
         printf "    numBatteries=\"$NUMBATTERIES_2\"\n" >> "$FILE"
     elif [ "$i" = 3 ]; then
-        printf "    invertorIP=\"$INVERTOR_IP_3\"\n" >> "$FILE"
+        printf "    inverterIP=\"$INVERTER_IP_3\"\n" >> "$FILE"
         printf "    numBatteries=\"$NUMBATTERIES_3\"\n" >> "$FILE"
     elif [ "$i" = 4 ]; then
-        printf "    invertorIP=\"$INVERTOR_IP_4\"\n" >> "$FILE"
+        printf "    inverterIP=\"$INVERTER_IP_4\"\n" >> "$FILE"
         printf "    numBatteries=\"$NUMBATTERIES_4\"\n" >> "$FILE"
     fi 
     printf "    Print_Raw_Registers=$PRINT_RAW\n" >> "$FILE"
@@ -106,7 +106,7 @@ do
     #############################
     ### Create Startup Script ###
     #############################
-    echo "Creating startup.sh file for Invertor ${i}"
+    echo "Creating startup.sh file for Inverter ${i}"
 
     printf "#!/bin/sh\n" >> "$FILE2"
     printf "#Only used for Docker Deployment\n" >> "$FILE2"
@@ -114,10 +114,10 @@ do
     printf "/usr/bin/find -type f -name 'regCache.pkl' -delete     #Remove any legacy pickle files\n" >> "$FILE2"
     printf "/usr/bin/find -type f -name '*lockfile*' -delete     #Remove any legacy lockfiles\n" >> "$FILE2"
     printf "echo GivTCP instance is \"$i\"\n" >> "$FILE2"
-    ### Run main invertor read loop ###
+    ### Run main inverter read loop ###
     printf "if [ \"\$SELF_RUN\" = \"True\" ]                         #Only run Schedule if requested\n" >> "$FILE2"
     printf "then\n" >> "$FILE2"
-    printf "    echo Running Invertor read loop every \"\$SELF_RUN_LOOP_TIMER\"s...\n" >> "$FILE2"
+    printf "    echo Running Inverter read loop every \"\$SELF_RUN_LOOP_TIMER\"s...\n" >> "$FILE2"
     printf "    /usr/local/bin/python3 ${PATH}/read.py self_run2  &       #Use to run periodically and push to MQTT\n" >> "$FILE2"
     printf "fi\n" >> "$FILE2"
     ### Run MQTT Broker if requested ###
@@ -135,7 +135,7 @@ do
     ### Run Web Dashboard ###
     printf "if [ \"\$WEB_DASH\" ]\n" >> "$FILE2"
     printf "then\n" >> "$FILE2"
-    printf "    (cd /app/GivEnergy-Smart-Home-Display-givtcp; /usr/bin/node /usr/local/bin/serve -p ${WEB_DASH_PORT}) &\n">> "$FILE2"
+    printf "    (cd /app/WebDashboard; /usr/bin/node /usr/local/bin/serve -p ${WEB_DASH_PORT}) &\n">> "$FILE2"
     printf "fi\n" >> "$FILE2"
     ### Run REST API ###
     printf "GUPORT=$((${i}+6344))\n" >> "$FILE2"
@@ -144,7 +144,7 @@ do
     printf "wait -n\n" >> "$FILE2"
     printf "exit \$?\n" >> "$FILE2"
 
-    if [ "$i" = "$NUMINVERTORS" ]
+    if [ "$i" = "$NUMINVERTERS" ]
     then
         (cd $PATH; /bin/sh startup.sh)   #Launch the individual startup script and hold for completion
     else

@@ -7,7 +7,7 @@ import sys
 import os
 import math
 
-def find_Invertor(target_ip):
+def find_Inverter(target_ip):
     arp = ARP(pdst=target_ip)
     # ff:ff:ff:ff:ff:ff MAC address indicates broadcasting
     ether = Ether(dst="ff:ff:ff:ff:ff:ff")
@@ -49,7 +49,7 @@ for network, netmask, _, interface, address, _ in scapy.config.conf.route.routes
         continue
     net = to_CIDR_notation(network, netmask)
     if net[0:7]!="169.254":
-        invIP=find_Invertor(net)
+        invIP=find_Inverter(net)
         if invIP!= None and invIP!=" ":
             print (invIP)
             sys.exit()

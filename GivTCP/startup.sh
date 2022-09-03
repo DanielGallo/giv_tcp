@@ -7,7 +7,7 @@ find -type f -name '*lockfile*' -delete     #Remove any legacy lockfiles
 
 if [ "$SELF_RUN" = "True" ]                         #Only run Schedule if requested
 then
-    echo Running Invertor read loop every "$SELF_RUN_LOOP_TIMER"s...
+    echo Running Inverter read loop every "$SELF_RUN_LOOP_TIMER"s...
     python3 /app/GivTCP/read.py self_run2  &       #Use to run periodically and push to MQTT
 fi
 
@@ -23,6 +23,6 @@ then
     python3 /app/GivTCP/mqtt_client.py &
 fi
 echo instance is "$i"
-GUPORT=$(($NUMINVERTORS+6344))
+GUPORT=$(($NUMINVERTERS+6344))
 echo Starting Gunicorn on port "$GUPORT"
 gunicorn -w 3 -b :"$GUPORT" GivTCP.REST:giv_api             #Use for on-demand read and control

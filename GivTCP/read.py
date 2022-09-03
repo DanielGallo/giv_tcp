@@ -48,14 +48,14 @@ ratedata="/config/GivTCP/rateData_"+str(GiV_Settings.givtcp_instance)+".pkl"
 lastupdate="/config/GivTCP/lastUpdate_"+str(GiV_Settings.givtcp_instance)+".pkl"
 forcefullrefresh="/config/GivTCP/.forceFullRefresh_"+str(GiV_Settings.givtcp_instance)
 
-def getData(fullrefresh):      #Read from Invertor put in cache 
+def getData(fullrefresh):      #Read from Inverter put in cache
     plant=Plant(number_batteries=int(GiV_Settings.numBatteries))
     energy_total_output={}
     energy_today_output={}
     power_output={}
     controlmode={}
     power_flow_output={}
-    invertor={}
+    inverter={}
     batteries = {}
     multi_output={}
     result={}
@@ -70,14 +70,14 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         result['result']="Error: Lockfile set so aborting getData"
         return json.dumps(result)
 
-    #Connect to Invertor and load data
+    #Connect to Inverter and load data
     try:
         # SET Lockfile to prevent clashes
         logger.info(" setting lock file")
-        logger.info("Connecting to: "+ GiV_Settings.invertorIP)
+        logger.info("Connecting to: "+ GiV_Settings.inverterIP)
         open(lockfile, 'w').close()
-        #client=GivEnergyClient(host=GiV_Settings.invertorIP)
-        client=GivEnergyClient(host=GiV_Settings.invertorIP)
+        #client=GivEnergyClient(host=GiV_Settings.inverterIP)
+        client=GivEnergyClient(host=GiV_Settings.inverterIP)
         client.refresh_plant(plant,full_refresh=fullrefresh)
         GEInv=plant.inverter
         GEBat=plant.batteries
@@ -100,7 +100,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
 
         multi_output['status']="online"
         
-        logger.info("Invertor connection successful, registers retrieved")
+        logger.info("Inverter connection successful, registers retrieved")
     except:
         e = sys.exc_info()
         logger.error("Error collecting registers: " + str(e))
@@ -113,7 +113,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
     if Print_Raw:
 
         raw={}
-        raw["invertor"]=GEInv.dict()
+        raw["inverter"]=GEInv.dict()
         raw["batteries"]=batteries
         multi_output['raw']=raw
 
@@ -122,14 +122,14 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         logger.info("Getting Total Energy Data")
         energy_total_output['Export_Energy_Total_kWh']=GEInv.e_grid_out_total
         energy_total_output['Import_Energy_Total_kWh']=GEInv.e_grid_in_total
-        energy_total_output['Invertor_Energy_Total_kWh']=GEInv.e_inverter_out_total
+        energy_total_output['Inverter_Energy_Total_kWh']=GEInv.e_inverter_out_total
         energy_total_output['PV_Energy_Total_kWh']=GEInv.e_pv_total
         energy_total_output['AC_Charge_Energy_Total_kWh']=GEInv.e_inverter_in_total
         
         if  GEInv.inverter_model==Model.Hybrid:
-            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh']),2)
+            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Inverter_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh']),2)
         else:
-            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Invertor_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh'])+energy_total_output['PV_Energy_Total_kWh'],2)
+            energy_total_output['Load_Energy_Total_kWh']=round((energy_total_output['Inverter_Energy_Total_kWh']-energy_total_output['AC_Charge_Energy_Total_kWh'])-(energy_total_output['Export_Energy_Total_kWh']-energy_total_output['Import_Energy_Total_kWh'])+energy_total_output['PV_Energy_Total_kWh'],2)
 
         energy_total_output['Self_Consumption_Energy_Total_kWh']=round(energy_total_output['PV_Energy_Total_kWh'],2)-round(energy_total_output['Export_Energy_Total_kWh'],2)
 
@@ -140,13 +140,13 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         energy_today_output['Import_Energy_Today_kWh']=GEInv.e_grid_in_day
         energy_today_output['Export_Energy_Today_kWh']=GEInv.e_grid_out_day
         energy_today_output['AC_Charge_Energy_Today_kWh']=GEInv.e_inverter_in_day
-        energy_today_output['Invertor_Energy_Today_kWh']=GEInv.e_inverter_out_day
+        energy_today_output['Inverter_Energy_Today_kWh']=GEInv.e_inverter_out_day
         energy_today_output['Self_Consumption_Energy_Today_kWh']=round(energy_today_output['PV_Energy_Today_kWh'],2)-round(energy_today_output['Export_Energy_Today_kWh'],2)
                 
         if GEInv.inverter_model==Model.Hybrid: 
-            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh']),2)
+            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Inverter_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh']),2)
         else:
-            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Invertor_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh'])+energy_today_output['PV_Energy_Today_kWh'],2)
+            energy_today_output['Load_Energy_Today_kWh']=round((energy_today_output['Inverter_Energy_Today_kWh']-energy_today_output['AC_Charge_Energy_Today_kWh'])-(energy_today_output['Export_Energy_Today_kWh']-energy_today_output['Import_Energy_Today_kWh'])+energy_today_output['PV_Energy_Today_kWh'],2)
 
         checksum=0
         for item in energy_today_output:
@@ -198,13 +198,13 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         logger.info("Getting EPS Power")
         power_output['EPS_Power']= GEInv.p_eps_backup
 
-    #Invertor Power
+    #Inverter Power
         logger.info("Getting PInv Power")
-        Invertor_power=GEInv.p_inverter_out
-        if -6000 <= Invertor_power <= 6000:
-            power_output['Invertor_Power']= Invertor_power
-        if Invertor_power<0:
-            power_output['AC_Charge_Power']= abs(Invertor_power)
+        Inverter_power=GEInv.p_inverter_out
+        if -6000 <= Inverter_power <= 6000:
+            power_output['Inverter_Power']= Inverter_power
+        if Inverter_power<0:
+            power_output['AC_Charge_Power']= abs(Inverter_power)
         else:
             power_output['AC_Charge_Power']=0
     #Load Power
@@ -314,7 +314,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         for item in energy_total_output:
             checksum=checksum+energy_total_output[item]
         if checksum==0:
-            raise ValueError("All zeros returned by Invertor, skipping update")
+            raise ValueError("All zeros returned by Inverter, skipping update")
 
 
     #Combine all outputs
@@ -349,7 +349,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         power["Power"]=power_output
         power["Flows"]=power_flow_output
         multi_output["Power"]=power
-        multi_output["Invertor_Details"]=invertor
+        multi_output["Inverter_Details"]=inverter
 
     ################ Run Holding Reg now ###################
         logger.info("Getting mode control figures")
@@ -419,20 +419,20 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         timeslots['Charge_start_time_slot_2']=GEInv.charge_slot_2[0].isoformat()
         timeslots['Charge_end_time_slot_2']=GEInv.charge_slot_2[1].isoformat()
 
-        #Get Invertor Details
-        invertor={}
-        logger.info("Getting Invertor Details")
+        #Get Inverter Details
+        inverter={}
+        logger.info("Getting Inverter Details")
         if GEInv.battery_type==1: batterytype="Lithium" 
         if GEInv.battery_type==0: batterytype="Lead Acid" 
-        invertor['Battery_Type']=batterytype
-        invertor['Battery_Capacity_kWh']=((GEInv.battery_nominal_capacity*51.2)/1000)
-        invertor['Invertor_Serial_Number']=GEInv.inverter_serial_number
-        invertor['Modbus_Version']=GEInv.modbus_version
+        inverter['Battery_Type']=batterytype
+        inverter['Battery_Capacity_kWh']=((GEInv.battery_nominal_capacity*51.2)/1000)
+        inverter['Inverter_Serial_Number']=GEInv.inverter_serial_number
+        inverter['Modbus_Version']=GEInv.modbus_version
         if GEInv.meter_type==1: metertype="EM115" 
         if GEInv.meter_type==0: metertype="EM418" 
-        invertor['Meter_Type']=metertype
-        invertor['Invertor_Type']= GEInv.inverter_model
-        invertor['Invertor_Temperature']=GEInv.temp_inverter_heatsink
+        inverter['Meter_Type']=metertype
+        inverter['Inverter_Type']= GEInv.inverter_model
+        inverter['Inverter_Temperature']=GEInv.temp_inverter_heatsink
 
         #Get Battery Details
         battery={}
@@ -478,7 +478,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
             battery['Battery_Cell_2_Temperature'] = b.temp_battery_cells_2
             battery['Battery_Cell_3_Temperature'] = b.temp_battery_cells_3
             battery['Battery_Cell_4_Temperature'] = b.temp_battery_cells_4
-            battery['Invertor_Serial_Number'] = GEInv.inverter_serial_number
+            battery['Inverter_Serial_Number'] = GEInv.inverter_serial_number
 
             if 'multi_output_old' in locals():
                 for i in battery:
@@ -489,7 +489,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         #Create multioutput and publish
         multi_output["Timeslots"]=timeslots
         multi_output["Control"]=controlmode
-        multi_output["Invertor_Details"]=invertor
+        multi_output["Inverter_Details"]=inverter
         multi_output["Battery_Details"]=batteries2
 
         # Save new data to Pickle
@@ -503,7 +503,7 @@ def getData(fullrefresh):      #Read from Invertor put in cache
         return json.dumps(result)
     return json.dumps(result, indent=4, sort_keys=True, default=str)
 
-def runAll(full_refresh):       #Read from Invertor put in cache and publish
+def runAll(full_refresh):       #Read from Inverter put in cache and publish
     #full_refresh=True
     result=getData(full_refresh)
     # Step here to validate data against previous pickle?
@@ -513,10 +513,10 @@ def runAll(full_refresh):       #Read from Invertor put in cache and publish
 def pubFromJSON():
     temp=open('GivTCP\\testdata.json')
     data=json.load(temp)
-    SN=data["Invertor_Details"]['Invertor_Serial_Number']
+    SN=data["Inverter_Details"]['Inverter_Serial_Number']
     publishOutput(data,SN)
 
-def pubFromPickle():        #Publish last cached Invertor Data
+def pubFromPickle():        #Publish last cached Inverter Data
     multi_output={}
     result="Success"
     if not exists(regcache):      #if there is no cache, create it
@@ -524,7 +524,7 @@ def pubFromPickle():        #Publish last cached Invertor Data
     if "Success" in result:
         with open(regcache, 'rb') as inp:
             multi_output= pickle.load(inp)
-        SN=multi_output["Invertor_Details"]['Invertor_Serial_Number']
+        SN=multi_output["Inverter_Details"]['Inverter_Serial_Number']
         publishOutput(multi_output,SN)
     else:
         multi_output['result']="Failure to find data cache"
