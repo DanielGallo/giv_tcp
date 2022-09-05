@@ -2,3 +2,4 @@
 	path = WebDashboard
 	url = https://github.com/DanielGallo/GivEnergy-Smart-Home-Display.git
 	branch = givtcp
+	update = merge
