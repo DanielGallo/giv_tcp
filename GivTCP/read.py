@@ -451,7 +451,7 @@ def getData(fullrefresh):      #Read from Inverter put in cache
 
             battery['Battery_Capacity']=b.battery_full_capacity
             battery['Battery_Design_Capacity']=b.battery_design_capacity
-            battery['Battery_Remaining_Capcity']=b.battery_remaining_capacity
+            battery['Battery_Remaining_Capacity']=b.battery_remaining_capacity
             battery['Battery_Firmware_Version']=b.bms_firmware_version
             battery['Battery_Cells']=b.battery_num_cells
             battery['Battery_Cycles']=b.battery_num_cycles
