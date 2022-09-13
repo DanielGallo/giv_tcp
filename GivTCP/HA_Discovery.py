@@ -102,7 +102,7 @@ class HAMQTT():
         "Battery_SOC":["sensor","battery"],
         "Battery_Capacity":["sensor","",""],
         "Battery_Design_Capacity":["sensor","",""],
-        "Battery_Remaining_Capcity":["sensor","",""],
+        "Battery_Remaining_Capacity":["sensor","",""],
         "Battery_Firmware_Version":["sensor",""],
         "Battery_Cells":["sensor","",""],
         "Battery_Cycles":["sensor","",""],
