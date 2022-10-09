@@ -62,7 +62,6 @@ object BuildAndDeployToDockerHub : BuildType({
 
     triggers {
         vcs {
-            enabled = false
             quietPeriodMode = VcsTrigger.QuietPeriodMode.USE_CUSTOM
             quietPeriod = 300
         }
