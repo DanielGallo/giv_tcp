@@ -120,7 +120,8 @@ def getData(fullrefresh):      #Read from Inverter put in cache
         if checksum==0 and GEInv.system_time.hour==0 and GEInv.system_time.minute==0 and exists(GivLUT.regcache):
             #remove regcache at midnight
             logger.info("Energy Today is Zero and its midnight so resetting regCache")
-            os.remove(GivLUT.regcache)
+            if exists(GivLUT.regcache):
+                os.remove(GivLUT.regcache)
 
         
 ############  Core Power Stats    ############
