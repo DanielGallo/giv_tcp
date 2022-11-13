@@ -247,11 +247,13 @@ class GivLUT:
             oldDataCount=1
         logger.critical("Consecutive failure count= "+str(oldDataCount))
         if oldDataCount>10:
-            #5 error in a row so delete regCache data
+            #10 error in a row so delete regCache data
             logger.critical("10 failed inverter reads in a row so removing regCache to force update...")
             if exists(GivLUT.regcache):
                 os.remove(GivLUT.regcache)
+            if exists(GivLUT.batterypkl):
                 os.remove(GivLUT.batterypkl)
+            if exists(GivLUT.oldDataCount):
                 os.remove(GivLUT.oldDataCount)
         else:
             with open(GivLUT.oldDataCount, 'wb') as outp:

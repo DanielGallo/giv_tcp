@@ -47,10 +47,10 @@ class GE:
         1.3, 1, 1.5, 0.5, 0.3, 1, 1.5, 1, 0.6, 0.5, 0.5, 0.3]
 
     # Start time for Overnight Charge
-    start_time = "00:30"
+    start_time = str(os.getenv('DAYRATESTART'))
 
     # End time for Overnight Charge
-    end_time = "04:30"
+    end_time = str(os.getenv('NIGHTRATESTART'))
 
 
 # SolCast PV forecast generator. Up to two arrays are supported with a forecast for each
