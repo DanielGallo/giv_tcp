@@ -35,11 +35,11 @@ services:
       - HA_AUTO_D=True                # If True (and if MQTT_OUTPUT is True) this will publish Home Assistant Auto Discovery messages to the broker
       - HADEVICEPREFIX=GivTCP         # Defines the prefix for all entities in Home Assistant
       - PYTHONPATH=/app
-      - DAYRATE=0.138                 # Price in £/$ for your daytime electricity per kWh
-      - NIGHTRATE=0.05               # Price in £/$ for your night time electricity per kWh
+      - DAYRATE=0.4337                 # Price in £/$ for your daytime electricity per kWh
+      - NIGHTRATE=0.10               # Price in £/$ for your night time electricity per kWh
       - EXPORTRATE=0.041               # Price in £/$ for your export electricity per kWh
-      - DAYRATESTART=04:30            # Time in HH:MM when your day time tariff kicks in
-      - NIGHTRATESTART=00:30          # Time in HH:MM when your night time tariff kicks in
+      - DAYRATESTART=05:30            # Time in HH:MM when your day time tariff kicks in
+      - NIGHTRATESTART=23:30          # Time in HH:MM when your night time tariff kicks in
       - WEB_DASH=True                # Enable the wed dashboard
       - WEB_DASH_PORT=3000            # Port to serve the web dashboard on
       - SMARTTARGET=False             # Enables the PALM capability, requires the three ENV below to be set

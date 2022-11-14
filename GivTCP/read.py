@@ -646,7 +646,12 @@ def ratecalcs(multi_output, multi_output_old):
     if exists(GivLUT.ratedata):
         with open(GivLUT.ratedata, 'rb') as inp:
             rate_data= pickle.load(inp)
-    
+
+    logger.info("Day rate start at "+str(dayRateStart))
+    logger.info("Night rate start at "+str(nightRateStart))
+    logger.info("Day start at "+str(day_start))
+    logger.info("Night start at "+str(night_start))
+
     import_energy=multi_output['Energy']['Total']['Import_Energy_Total_kWh']
     import_energy_old=multi_output_old['Energy']['Total']['Import_Energy_Total_kWh']
 
@@ -696,7 +701,7 @@ def ratecalcs(multi_output, multi_output_old):
 
     if import_energy>import_energy_old: # Only run if there has been more import
         logger.info("Imported more energy so calculating current tariff costs: "+str(import_energy_old)+" -> "+str(import_energy))
-    
+
         if night_start <= datetime.datetime.now(GivLUT.timezone) < day_start:
             logger.info("Current Tariff is Night, calculating stats...")
             rate_data['Night_Energy_kWh']=import_energy-rate_data['Night_Start_Energy_kWh']
