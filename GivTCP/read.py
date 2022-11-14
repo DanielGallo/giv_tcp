@@ -4,8 +4,7 @@ from audioop import mul
 from ntpath import join
 import sys
 from pickletools import read_uint1
-import json, logging, datetime, pickle, time
-from datetime import datetime, timedelta
+import json, logging, pickle, datetime, time
 from GivLUT import GivLUT, GivQueue, GivClient
 from settings import GiV_Settings
 from os.path import exists
@@ -58,7 +57,7 @@ def getData(fullrefresh):      #Read from Inverter put in cache
         logger.info("Removing lock file")
         os.remove(GivLUT.lockfile)
   
-        multi_output['Last_Updated_Time']= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()  
+        multi_output['Last_Updated_Time']= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
         
         #Get lastupdate from pickle if it exists
         if exists(GivLUT.lastupdate):
@@ -646,17 +645,17 @@ def ratecalcs(multi_output, multi_output_old):
 
     # If night rate starts before midnight, change "night start" to the prior day rather than current day
     if nightRateStart>dayRateStart:
-        night_start = night_start - timedelta(days=1)
-
-    #check if pickle data exists:
-    if exists(GivLUT.ratedata):
-        with open(GivLUT.ratedata, 'rb') as inp:
-            rate_data= pickle.load(inp)
+        night_start = night_start - datetime.timedelta(days=1)
 
     logger.info("Day rate start at "+str(dayRateStart))
     logger.info("Night rate start at "+str(nightRateStart))
     logger.info("Day start at "+str(day_start))
     logger.info("Night start at "+str(night_start))
+
+    #check if pickle data exists:
+    if exists(GivLUT.ratedata):
+        with open(GivLUT.ratedata, 'rb') as inp:
+            rate_data= pickle.load(inp)
 
     import_energy=multi_output['Energy']['Total']['Import_Energy_Total_kWh']
     import_energy_old=multi_output_old['Energy']['Total']['Import_Energy_Total_kWh']
