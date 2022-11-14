@@ -5,6 +5,7 @@ from ntpath import join
 import sys
 from pickletools import read_uint1
 import json, logging, datetime, pickle, time
+from datetime import datetime, timedelta
 from GivLUT import GivLUT, GivQueue, GivClient
 from settings import GiV_Settings
 from os.path import exists
@@ -642,6 +643,11 @@ def ratecalcs(multi_output, multi_output_old):
     nightRateStart=datetime.datetime.strptime(GiV_Settings.night_rate_start, '%H:%M')
     night_start=datetime.datetime.combine(datetime.datetime.now(GivLUT.timezone).date(),nightRateStart.time()).replace(tzinfo=GivLUT.timezone)
     day_start=datetime.datetime.combine(datetime.datetime.now(GivLUT.timezone).date(),dayRateStart.time()).replace(tzinfo=GivLUT.timezone)
+
+    # If night rate starts before midnight, change "night start" to the prior day rather than current day
+    if (nightRateStart>dayRateStart):
+        night_start = night_start - timedelta(days=1)
+
     #check if pickle data exists:
     if exists(GivLUT.ratedata):
         with open(GivLUT.ratedata, 'rb') as inp:
