@@ -645,7 +645,7 @@ def ratecalcs(multi_output, multi_output_old):
     day_start=datetime.datetime.combine(datetime.datetime.now(GivLUT.timezone).date(),dayRateStart.time()).replace(tzinfo=GivLUT.timezone)
 
     # If night rate starts before midnight, change "night start" to the prior day rather than current day
-    if (nightRateStart>dayRateStart):
+    if nightRateStart>dayRateStart:
         night_start = night_start - timedelta(days=1)
 
     #check if pickle data exists:
